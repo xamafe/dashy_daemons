@@ -59,7 +59,7 @@ def load_calendar_config():
     return calendars
 
 def authenticate():
-    """Authenticate with Google Calendar API"""
+    """Authenticate with Google Calendar API (headless server compatible)"""
     print("🔐 Authenticating with Google Calendar API...")
     
     # Check if credentials file exists
@@ -79,11 +79,34 @@ def authenticate():
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             print("🔄 Refreshing expired token...")
-            creds.refresh(Request())
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"❌ Token refresh failed: {e}")
+                print("🗑️  Deleting invalid token, please re-authenticate...")
+                if os.path.exists(TOKEN_FILE):
+                    os.remove(TOKEN_FILE)
+                return authenticate()  # Retry authentication
         else:
-            print("🌐 Opening browser for authentication...")
+            print("🌐 Starting headless authentication...")
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
+            
+            # Check if we're on a headless server
+            if not os.environ.get('DISPLAY') and not os.environ.get('BROWSER'):
+                print("🖥️  Headless server detected - using console authentication")
+                try:
+                    # Try console-based auth first
+                    creds = flow.run_console()
+                except Exception:
+                    print("⚠️  Console auth failed, falling back to manual auth...")
+                    creds = run_manual_auth(flow)
+            else:
+                try:
+                    creds = flow.run_local_server(port=0)
+                except Exception as e:
+                    print(f"⚠️  Browser auth failed: {e}")
+                    print("🔧 Falling back to manual authentication...")
+                    creds = run_manual_auth(flow)
         
         # Save the credentials for the next run
         with open(TOKEN_FILE, 'w') as token:
@@ -91,6 +114,32 @@ def authenticate():
         print("✅ Authentication successful!")
     
     return build('calendar', 'v3', credentials=creds)
+
+def run_manual_auth(flow):
+    """Manual authentication for headless servers"""
+    print("\n" + "="*60)
+    print("🔗 MANUAL AUTHENTICATION REQUIRED")
+    print("="*60)
+    print("1. Copy the following URL:")
+    print("2. Open it in a browser on ANY device (phone, laptop, etc.)")
+    print("3. Sign in and authorize the application")
+    print("4. Copy the authorization code from the browser")
+    print("5. Paste it below")
+    print("="*60)
+    
+    auth_url, _ = flow.authorization_url(prompt='consent')
+    print(f"\n🌐 Authorization URL:\n{auth_url}\n")
+    
+    auth_code = input("📋 Enter the authorization code: ").strip()
+    
+    try:
+        flow.fetch_token(code=auth_code)
+        print("✅ Manual authentication successful!")
+        return flow.credentials
+    except Exception as e:
+        print(f"❌ Authentication failed: {e}")
+        print("Please try again with the correct authorization code")
+        sys.exit(1)
 
 def get_theme_color(calendar_name):
     """Return theme-matching colors for different calendars"""
