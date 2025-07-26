@@ -135,14 +135,14 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+**/.env
+**/.envrc
+**/.venv
+**/env/
+**/venv/
+**/ENV/
+**/env.bak/
+**/venv.bak/
 
 # Spyder project settings
 .spyderproject
@@ -205,3 +205,26 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Secrets and credentials - NEVER commit these!
+.env
+**/credentials.json
+**/token.json
+
+# Output files
+**/calendar-feed.json
+google_calendar/*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
