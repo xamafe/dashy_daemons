@@ -26,14 +26,17 @@ except ImportError as e:
     print("Please install requirements: pip install -r requirements.txt")
     sys.exit(1)
 
-# Load environment variables from .env file
-load_dotenv()
+SCRIPT_DIR = Path(__file__).resolve().parent
 
+# Load environment variables from .env file
+load_dotenv(dotenv_path=SCRIPT_DIR / '.env')
 # Configuration from environment variables
+
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_FILE', 'credentials.json')
-TOKEN_FILE = os.getenv('GOOGLE_TOKEN_FILE', 'token.json')
+CREDENTIALS_FILE = os.getenv('GOOGLE_CREDENTIALS_FILE', SCRIPT_DIR / 'credentials.json')
+TOKEN_FILE = os.getenv('GOOGLE_TOKEN_FILE',  SCRIPT_DIR / 'token.json')
 OUTPUT_FILE = os.getenv('OUTPUT_FILE', '/opt/dashy/public/calendar-feed.json')
+
 
 def load_calendar_config():
     """Load calendar configuration from environment variables"""
@@ -68,7 +71,8 @@ def authenticate():
         print("Please download your Google API credentials and save as credentials.json")
         print("Get them from: https://console.cloud.google.com/")
         sys.exit(1)
-    
+    else:
+        print(f"📄 Using credentials file: {CREDENTIALS_FILE}")
     creds = None
     
     # Load existing token
@@ -165,7 +169,7 @@ def format_event_time(event):
     
     # Check if it's an all-day event
     if 'date' in start:
-        return "All Day", True
+        return "Ganztägig", True
     
     # Parse datetime
     try:
@@ -244,7 +248,7 @@ def generate_calendar_feed():
     now = datetime.now()
     feed_data = {
         "title": "Heutige Termine",
-        "subtitle": now.strftime("%A, %B %d, %Y"),
+        "subtitle": now.strftime("%A, %d.%B.%Y"),
         "items": [
             {
                 "label": event['label'],
