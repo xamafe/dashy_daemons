@@ -214,6 +214,7 @@ __marimo__/
 # Output files
 **/calendar-feed.json
 google_calendar/*.json
+vrr_efa/*.json
 
 # IDE
 .vscode/

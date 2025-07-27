@@ -1,0 +1,28 @@
+{
+  "output_file": "./vrr-efa-feed.json",
+  "max_departures_per_stop": 10,
+  "timeout": 30,
+  "stops": [
+    {
+      "name": "Hauptbahnhof",
+      "city": "Düsseldorf",
+      "enabled": true,
+      "max_departures": 8,
+      "platforms": []
+    },
+    {
+      "name": "Hauptbahnhof", 
+      "city": "Essen",
+      "enabled": true,
+      "max_departures": 5,
+      "platforms": ["1","2"]
+    },
+    {
+      "name": "Bismarckplatz",
+      "city": "Düsseldorf",
+      "enabled": false,
+      "max_departures": 6,
+      "platforms": ["1"]
+    }
+  ]
+}

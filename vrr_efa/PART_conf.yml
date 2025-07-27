@@ -1,0 +1,326 @@
+widgets:
+  - type: embed
+    options:
+      html: |
+        <div id="vrr-widget-container">
+          <p>Lade Abfahrten...</p>
+        </div>
+      css: |
+        #vrr-widget-container {
+          font-family: var(--font-body);
+          color: var(--widget-text-color);
+        }
+        .vrr-title {
+          font-size: 1.2rem;
+          font-weight: bold;
+          margin-bottom: 0.2rem;
+          color: var(--widget-text-color);
+          text-align: center;
+        }
+        .vrr-subtitle {
+          font-size: 0.8rem;
+          opacity: 0.8;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+        .vrr-stop-section {
+          margin-bottom: 1.5rem;
+        }
+        .vrr-stop-title {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0.8rem;
+          color: var(--widget-text-color);
+          text-align: center;
+          padding: 0.5rem;
+          background: var(--background-darker);
+          border-radius: var(--curve-sm);
+          border-left: 4px solid var(--primary);
+        }
+        .vrr-departure {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.6rem 0.8rem;
+          margin-bottom: 0.4rem;
+          background: var(--background-darker);
+          border-radius: var(--curve-sm);
+          border-left: 4px solid #4CAF50;
+          transition: all 0.2s ease;
+        }
+        .vrr-departure:hover {
+          background: var(--background);
+          transform: translateX(2px);
+        }
+        .vrr-departure-main {
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          flex: 1;
+        }
+        .vrr-time {
+          font-weight: bold;
+          font-size: 0.9rem;
+          min-width: 70px;
+          text-align: center;
+          padding: 0.3rem 0.6rem;
+          border-radius: var(--curve-sm);
+          background: var(--background);
+          color: #4CAF50;
+        }
+        .vrr-time.soon {
+          color: var(--warning);
+          background: color-mix(in srgb, var(--warning) 15%, var(--background));
+        }
+        .vrr-time.immediate {
+          color: var(--danger);
+          background: color-mix(in srgb, var(--danger) 15%, var(--background));
+          animation: vrr-pulse 2s infinite;
+        }
+        @keyframes vrr-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        .vrr-line {
+          font-weight: bold;
+          font-size: 0.9rem;
+          color: var(--background);
+          background: var(--primary);
+          padding: 0.3rem 0.6rem;
+          border-radius: var(--curve-sm);
+          min-width: 45px;
+          text-align: center;
+        }
+        .vrr-destination {
+          font-size: 0.9rem;
+          color: var(--widget-text-color);
+          flex: 1;
+        }
+        .vrr-destination::before {
+          content: "→ ";
+          color: var(--primary);
+          font-weight: bold;
+        }
+        .vrr-extras {
+          display: flex;
+          gap: 0.4rem;
+          align-items: center;
+        }
+        .vrr-platform {
+          font-size: 0.8rem;
+          color: var(--widget-text-color);
+          background: var(--background);
+          padding: 0.2rem 0.5rem;
+          border-radius: var(--curve-sm);
+          opacity: 0.8;
+        }
+        .vrr-delay {
+          font-size: 0.8rem;
+          padding: 0.2rem 0.5rem;
+          border-radius: var(--curve-sm);
+          font-weight: 500;
+        }
+        .vrr-delay.on-time {
+          color: var(--success);
+          background: color-mix(in srgb, var(--success) 15%, var(--background));
+        }
+        .vrr-delay.delayed {
+          color: var(--warning);
+          background: color-mix(in srgb, var(--warning) 15%, var(--background));
+        }
+        .vrr-no-data {
+          text-align: center;
+          opacity: 0.7;
+          padding: 1rem;
+          font-style: italic;
+        }
+        .vrr-error {
+          color: var(--danger);
+          background: color-mix(in srgb, var(--danger) 10%, var(--background));
+          padding: 0.8rem;
+          border-radius: var(--curve-sm);
+          text-align: center;
+          margin-bottom: 1rem;
+          border-left: 4px solid var(--danger);
+        }
+        .vrr-loading {
+          text-align: center;
+          padding: 2rem;
+          opacity: 0.8;
+        }
+        .vrr-loading::after {
+          content: '';
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid var(--widget-text-color);
+          border-radius: 50%;
+          border-top-color: transparent;
+          animation: vrr-spin 1s linear infinite;
+          margin-left: 0.5rem;
+          opacity: 0.6;
+        }
+        @keyframes vrr-spin {
+          to { transform: rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+          .vrr-departure {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+          }
+          .vrr-departure-main {
+            flex-direction: column;
+            gap: 0.4rem;
+          }
+        }
+      script: |
+        (function() {
+          const container = document.getElementById('vrr-widget-container');
+          const dataUrl = '/vrr-efa-feed.json';
+          
+          function loadVRRData() {
+            fetch(dataUrl + '?v=' + Date.now())
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                renderVRRData(data);
+              })
+              .catch(error => {
+                console.error('Error fetching VRR data:', error);
+                container.innerHTML = '<div class="vrr-error">❌ Fehler beim Laden der VRR-Daten: ' + error.message + '</div>';
+              });
+          }
+          
+          function renderVRRData(data) {
+            container.innerHTML = '';
+            
+            // Add title and subtitle
+            const titleEl = document.createElement('h3');
+            titleEl.className = 'vrr-title';
+            titleEl.textContent = '🚌 VRR Abfahrten';
+            container.appendChild(titleEl);
+            
+            const subtitleEl = document.createElement('p');
+            subtitleEl.className = 'vrr-subtitle';
+            if (data.last_updated) {
+              const updateTime = new Date(data.last_updated).toLocaleTimeString('de-DE', {
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+              subtitleEl.textContent = `Letzte Aktualisierung: ${updateTime}`;
+            } else {
+              subtitleEl.textContent = 'Live-Abfahrten';
+            }
+            container.appendChild(subtitleEl);
+            
+            // Check if there are stops
+            if (!data.stops || Object.keys(data.stops).length === 0) {
+              container.innerHTML += '<div class="vrr-no-data">Keine Haltestellen konfiguriert</div>';
+              return;
+            }
+            
+            // Render each stop
+            Object.entries(data.stops).forEach(([stopName, stopData]) => {
+              renderStop(stopName, stopData);
+            });
+          }
+          
+          function renderStop(stopName, stopData) {
+            const stopSection = document.createElement('div');
+            stopSection.className = 'vrr-stop-section';
+            
+            const stopTitle = document.createElement('div');
+            stopTitle.className = 'vrr-stop-title';
+            stopTitle.textContent = stopName;
+            stopSection.appendChild(stopTitle);
+            
+            if (stopData.error) {
+              const errorDiv = document.createElement('div');
+              errorDiv.className = 'vrr-error';
+              errorDiv.textContent = `Fehler: ${stopData.error}`;
+              stopSection.appendChild(errorDiv);
+            } else if (!stopData.departures || stopData.departures.length === 0) {
+              const noDataDiv = document.createElement('div');
+              noDataDiv.className = 'vrr-no-data';
+              noDataDiv.textContent = 'Keine Abfahrten verfügbar';
+              stopSection.appendChild(noDataDiv);
+            } else {
+              stopData.departures.forEach(departure => {
+                const departureEl = createDepartureElement(stopData.name, departure);
+                stopSection.appendChild(departureEl);
+              });
+            }
+            
+            container.appendChild(stopSection);
+          }
+          
+          function createDepartureElement(stopName, departure) {
+            const departureDiv = document.createElement('div');
+            departureDiv.className = 'vrr-departure';
+            
+            const timeInfo = formatTime(departure);
+            const delayInfo = formatDelay(departure);
+            
+            departureDiv.innerHTML = `
+              <div class="vrr-departure-main">
+                <div class="vrr-time ${timeInfo.class}">${timeInfo.display}</div>
+                <div class="vrr-line">${departure.line}</div>
+                <div class="vrr-destination">${departure.destination}</div>
+              </div>
+              <div class="vrr-extras">
+                ${delayInfo.html}
+                ${departure.platform ? `<div class="vrr-platform">Gl. ${departure.platform}</div>` : ''}
+              </div>
+            `;
+            
+            return departureDiv;
+          }
+          
+          function formatTime(departure) {
+            const countdownMinutes = departure.countdown_minutes;
+            
+            if (countdownMinutes !== null && countdownMinutes !== undefined) {
+              const minutes = parseInt(countdownMinutes);
+              
+              if (minutes <= 0) {
+                return { display: 'sofort', class: 'immediate' };
+              } else if (minutes <= 5) {
+                return { display: `${minutes} min`, class: 'immediate' };
+              } else if (minutes <= 15) {
+                return { display: `${minutes} min`, class: 'soon' };
+              } else {
+                return { display: `${minutes} min`, class: '' };
+              }
+            }
+            
+            // Fallback to departure_time
+            if (departure.departure_time) {
+              return { display: departure.departure_time, class: '' };
+            }
+            
+            return { display: 'N/A', class: '' };
+          }
+          
+          function formatDelay(departure) {
+            const delay = departure.delay || 0;
+            
+            if (delay === 0) {
+              return { html: '<div class="vrr-delay on-time">pünktlich</div>' };
+            } else if (delay > 0) {
+              return { html: `<div class="vrr-delay delayed">+${delay} min</div>` };
+            } else {
+              return { html: `<div class="vrr-delay on-time">${delay} min</div>` };
+            }
+          }
+          
+          // Initial load
+          loadVRRData();
+          
+          // Auto-refresh every 30 seconds
+          setInterval(loadVRRData, 30000);
+        })();

@@ -1,0 +1,9 @@
+# VRR EFA API Data Fetcher Requirements
+# Core HTTP library for API requests
+requests>=2.31.0
+
+# Optional: For better JSON handling and validation (if needed later)
+# jsonschema>=4.17.0
+
+# Optional: For enhanced logging and configuration (if needed later)
+# pyyaml>=6.0
