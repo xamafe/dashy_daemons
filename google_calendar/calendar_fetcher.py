@@ -13,6 +13,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from dateutil import tz
 
 # Check for required packages
 try:
@@ -163,7 +164,7 @@ def get_theme_color(calendar_name):
     
     return env_color or default_colors.get(calendar_name, '#a0aec0')
 
-def format_event_time(event):
+def format_event_time(event, local_tz):
     """Format event time for display"""
     start = event['start']
     
@@ -174,26 +175,27 @@ def format_event_time(event):
     # Parse datetime
     try:
         dt_string = start['dateTime']
-        dt = datetime.fromisoformat(dt_string.replace('Z', '+00:00'))
-        return dt.strftime('%H:%M'), False
+        utc_dt = datetime.fromisoformat(dt_string)
+        local_dt = utc_dt.astimezone(local_tz)
+        return local_dt.strftime('%H:%M'), False
     except Exception as e:
         print(f"⚠️  Error parsing time for event '{event.get('summary', 'Unknown')}': {e}")
         return "Time TBD", False
 
-def fetch_calendar_events(service, calendar_id, calendar_name):
+def fetch_calendar_events(service, calendar_id, calendar_name, local_tz, time_min, time_max):
     """Fetch today's events from a specific calendar"""
     print(f"📅 Fetching events from: {calendar_name}")
     
     # Get today's date range
     now = datetime.now()
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_day = start_of_day + timedelta(days=1)
+    #start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    #end_of_day = start_of_day + timedelta(days=1)
     
     try:
         events_result = service.events().list(
             calendarId=calendar_id,
-            timeMin=start_of_day.isoformat() + 'Z',
-            timeMax=end_of_day.isoformat() + 'Z',
+            timeMin=time_min.isoformat(),
+            timeMax=time_max.isoformat(),
             singleEvents=True,
             orderBy='startTime',
             maxResults=50  # Limit to avoid too many events
@@ -204,7 +206,7 @@ def fetch_calendar_events(service, calendar_id, calendar_name):
         
         formatted_events = []
         for event in events:
-            time_str, is_all_day = format_event_time(event)
+            time_str, is_all_day = format_event_time(event, local_tz)
             
             formatted_events.append({
                 'label': event.get('summary', 'No Title'),
@@ -228,6 +230,21 @@ def generate_calendar_feed():
     print("🚀 Starting Dashy Calendar Feed Generator")
     print(f"📁 Output file: {OUTPUT_FILE}")
     
+    local_tz = tz.tzlocal()
+    if local_tz is None:
+        print("⚠️  Could not detect server timezone. Falling back to UTC.")
+        print("   Please configure the server timezone with 'sudo timedatectl set-timezone Your/Timezone'")
+        local_tz = tz.gettz('UTC')
+
+    # 2. Get the current time in the local timezone
+    now_local = datetime.now(local_tz)
+
+    print(f"🌍 Detected server timezone: {now_local.tzname()}")
+
+    # 3. Define today's date range IN THE LOCAL TIMEZONE
+    start_of_day = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = start_of_day + timedelta(days=1)
+
     # Load configuration
     calendars = load_calendar_config()
     print(f"📋 Configured calendars: {list(calendars.values())}")
@@ -238,7 +255,7 @@ def generate_calendar_feed():
     # Fetch all events
     all_events = []
     for calendar_id, calendar_name in calendars.items():
-        events = fetch_calendar_events(service, calendar_id, calendar_name)
+        events = fetch_calendar_events(service, calendar_id, calendar_name, local_tz, start_of_day, end_of_day)
         all_events.extend(events)
     
     # Sort events: all-day first, then by time

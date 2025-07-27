@@ -48,6 +48,10 @@ pip install -r requirements.txt
    - Go to [Google Calendar](https://calendar.google.com)
    - Settings → Select your calendar → "Calendar ID"
    - Copy the ID (looks like `abc123@gmail.com`)
+   - Add it to `.env`
+
+4. Add ouput file:
+   The output file has to be saved into the "user-data" directory. Otherwise the webserver will not recognize if it changes.
 
 ### Step 4: First Run
 
@@ -56,23 +60,13 @@ python3 calendar_feed.py
 ```
 
 On first run:
-- Browser will open for Google authentication
-- Grant calendar read permissions
-- Token will be saved for future runs
+- Browser will open for Google authentication (If you ran it on a server you have to copy some data...)
+- Grant calendar read permissions 
+- Token will be saved for future runs 
 
 ### Step 5: Add to Dashy
 
-Add this to your `conf.yml`:
-
-```yaml
-- name: Today's Schedule
-  icon: fas fa-calendar-check
-  widgets:
-    - type: data-feed
-      url: ./calendar-feed.json
-      title: Family Calendar
-      refreshInterval: 900  # 15 minutes
-```
+Add the PART_conf.yml to your `conf.yml`
 
 ### Step 6: Automation
 
@@ -104,6 +98,11 @@ WIFES_CALENDAR_COLOR=#ed8936
 ```
 
 ## Troubleshooting
+
+### Debians python packeges are too old
+- install python3-venv
+- create a virtual environment
+- add it to the cronjob
 
 ### Authentication Issues
 - Delete `token.json` and run again
@@ -145,5 +144,3 @@ The script generates JSON like this:
   "total": 4
 }
 ```
-
-This displays in Dashy as a native widget matching your theme perfectly!

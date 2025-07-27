@@ -1,0 +1,103 @@
+      - type: embed
+        options:
+          html: |
+            <div id="calendar-widget-container">
+              <p>Lade Termine...</p>
+            </div>
+          css: |
+            #calendar-widget-container {
+              font-family: var(--font-body);
+              color: var(--widget-text-color);
+            }
+            .calendar-title {
+              font-size: 1.2rem;
+              font-weight: bold;
+              margin-bottom: 0.2rem;
+              color: var(--widget-text-color);
+            }
+            .calendar-subtitle {
+              font-size: 0.8rem;
+              opacity: 0.8;
+              margin-bottom: 1rem;
+            }
+            .calendar-event {
+              display: flex;
+              align-items: flex-start;
+              padding: 0.6rem 0.4rem;
+              border-left: 4px solid #a0aec0; /* Default border color */
+              margin-bottom: 0.5rem;
+              background: var(--background-darker);
+              border-radius: var(--curve-sm);
+            }
+            .event-time {
+              font-weight: bold;
+              width: 60px; /* Allocate fixed space for time */
+              flex-shrink: 0;
+            }
+            .event-details {
+              flex-grow: 1;
+            }
+            .event-label {
+              font-weight: 500;
+            }
+            .event-unit {
+              font-size: 0.8em;
+              opacity: 0.9;
+            }
+            .no-events {
+              opacity: 0.7;
+            }
+          script: |
+            (function() {
+              const container = document.getElementById('calendar-widget-container');
+
+              fetch('/calendar-feed.json?v=' + Date.now() )
+                .then(response => {
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  // Clear the "Loading..." message
+                  container.innerHTML = '';
+
+                  // Add Title and Subtitle
+                  const titleEl = document.createElement('h3');
+                  titleEl.className = 'calendar-title';
+                  titleEl.textContent = data.title;
+                  container.appendChild(titleEl);
+
+                  const subtitleEl = document.createElement('p');
+                  subtitleEl.className = 'calendar-subtitle';
+                  subtitleEl.textContent = data.subtitle;
+                  container.appendChild(subtitleEl);
+
+                  // Check if there are any events
+                  if (data.items.length === 0) {
+                    container.innerHTML += '<p class="no-events">Keine Termine für heute.</p>';
+                    return;
+                  }
+
+                  // Create and append each event item
+                  data.items.forEach(event => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'calendar-event';
+                    // Use the color from the JSON for the left border
+                    eventElement.style.borderLeftColor = event.color;
+
+                    eventElement.innerHTML = `
+                      <div class="event-time">${event.value}</div>
+                      <div class="event-details">
+                        <div class="event-label">${event.label}</div>
+                        <div class="event-unit" style="color: ${event.color};">${event.unit}</div>
+                      </div>
+                    `;
+                    container.appendChild(eventElement);
+                  });
+                })
+                .catch(error => {
+                  console.error('Error fetching calendar data:', error);
+                  container.innerHTML = '<p style="color: var(--danger);">❌ Fehler beim Laden der Kalenderdaten.</p>';
+                });
+            })();
