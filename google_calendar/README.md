@@ -10,6 +10,10 @@ A Python script that fetches Google Calendar events and creates a JSON feed for 
 - ⚡ Automatic authentication and token refresh
 - 📱 Perfect integration with Dashy's material-dark theme
 
+## Example
+
+<img width="546" height="510" alt="demo" src="https://github.com/user-attachments/assets/c5babe68-dea3-4b32-aa89-802ecd848b99" />
+
 ## Setup Instructions
 
 ### Step 1: Install Dependencies
